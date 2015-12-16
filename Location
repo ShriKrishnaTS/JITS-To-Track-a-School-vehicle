@@ -1,0 +1,325 @@
+package com.example.lf;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.apache.http.client.ClientProtocolException;
+
+import android.app.Activity;
+import android.content.Context;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+
+public class MainActivity extends Activity implements LocationListener{
+
+   
+    protected LocationManager locationManager;
+    protected LocationListener locationListener;
+    protected Context context;
+    TextView txtLat,tv;
+    String lat;
+    String provider;
+    protected static double latitude,longitude; 
+    protected boolean gps_enabled,network_enabled;
+    String busname="Kushavathi";
+    String s = null;
+    RelativeLayout rl;
+    Button b1;
+	private float accuracy;
+	private double altitude;
+	TextToSpeech ttobj;
+      
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        rl=(RelativeLayout)findViewById(R.id.rl);
+        txtLat = (TextView) findViewById(R.id.textview1);
+        /*b1=new Button(this);
+        b1.setText("Get Loc");
+        b1.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				// TODO Auto-generated method stub
+				
+				try{
+				connectWithHttpGet();
+				}
+				catch(Exception e){
+					Toast.makeText(getApplicationContext(), e.toString(),Toast.LENGTH_LONG).show();
+				}
+			}
+		});
+        
+       rl.addView(b1);*/
+        
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        
+        ttobj=new TextToSpeech(getApplicationContext(), 
+        	      new TextToSpeech.OnInitListener() {
+        	      @Override
+        	      public void onInit(int status) {
+        	         if(status != TextToSpeech.ERROR){
+        	             //ttobj.setLanguage(Locale.UK);
+        	        	 ttobj.setLanguage(Locale.ENGLISH);
+        	            }				
+        	         }
+        	      });
+        	   
+       
+        Timer m=new Timer();
+        m.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				try{
+					 
+				connectWithHttpGet();
+				}
+				catch(Exception e){ }
+				
+			}
+		},20000,8000);
+    }
+
+    @Override
+	   public void onPause(){
+	      if(ttobj !=null){
+	         ttobj.stop();
+	         ttobj.shutdown();
+	      }
+	      super.onPause();
+	   }
+    @Override
+    public void onResume()
+    {
+    	super.onResume();
+    	 ttobj=new TextToSpeech(getApplicationContext(), 
+       	      new TextToSpeech.OnInitListener() {
+       	      @Override
+       	      public void onInit(int status) {
+       	         if(status != TextToSpeech.ERROR){
+       	             //ttobj.setLanguage(Locale.UK);
+       	        	 ttobj.setLanguage(Locale.ENGLISH);
+       	            }				
+       	         }
+       	      });
+    }
+
+    public boolean isOnline(Context c) {
+    	ConnectivityManager cm = (ConnectivityManager) c
+    	.getSystemService(Context.CONNECTIVITY_SERVICE);
+    	NetworkInfo ni = cm.getActiveNetworkInfo();
+    	 
+    	if (ni != null && ni.isConnected())
+    	  return true;
+    	else
+    	  return false;
+    	}
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+
+	@Override
+	public void onLocationChanged(Location location) {
+		// TODO Auto-generated method stub
+		txtLat = (TextView) findViewById(R.id.textview1);
+		
+		latitude=location.getLatitude();
+		longitude=location.getLongitude();
+		//txtLat.setText("Latitude:" + latitude + ", Longitude:" + longitude );
+		
+		/*try{
+			connectWithHttpGet();
+		}
+		catch(Exception e){ };*/
+		
+	}
+
+private void connectWithHttpGet() throws InterruptedException {
+
+	 if (!isOnline(this))
+	 {
+		 Toast.makeText(getApplicationContext(), "hhh", Toast.LENGTH_SHORT).show();
+		 return;
+	 }
+        
+		// Connect with a server is a time consuming process.
+		//Therefore we use AsyncTask to handle it
+		// From the three generic types;
+		//First type relate with the argument send in execute()
+		//Second type relate with onProgressUpdate method which I haven't use in this code
+		//Third type relate with the return type of the doInBackground method, which also the input type of the onPostExecute method
+		class HttpGetAsyncTask extends AsyncTask<String, Void, String>{
+
+			
+			
+			@Override
+			protected String doInBackground(String... params) {
+
+				// As you can see, doInBackground has taken an Array of Strings as the argument
+				//We need to specifically get the givenUsername and givenPassword
+				
+				// Create an intermediate to connect with the Internet
+				//HttpClient httpClient = new DefaultHttpClient();
+
+				// Sending a GET request to the web page that we want
+				// Because of we are sending a GET request, we have to pass the values through the URL
+				//HttpGet httpGet = new HttpGet("http://jnnce.ac.in/cse/atd.php");
+
+				try {
+					String link="http://jnnce.ac.in/cse/loc.php";
+ 			  				
+					String data  = "busname="+busname+"&lat="+latitude+"&long="+longitude;
+					//txtLat=(TextView) findViewById(R.id.textview1);
+		            //txtLat.setText(link);
+		            URL url = new URL(link);
+		            URLConnection conn = url.openConnection(); 
+		            conn.setDoOutput(true); 
+		            
+		            OutputStreamWriter wr = new OutputStreamWriter
+		            (conn.getOutputStream()); 
+		            wr.write(data); 
+		            wr.flush(); 
+		            
+		            BufferedReader reader = new BufferedReader
+		            (new InputStreamReader(conn.getInputStream()));
+		            StringBuilder sb = new StringBuilder();
+		            String line = null;
+		            // Read Server Response
+		            while((line = reader.readLine()) != null)
+		            {
+		               sb.append(line);
+		               break;
+		            }
+		            return sb.toString();
+		            //return "";
+
+				} catch (ClientProtocolException cpe) {
+					System.out.println("Exceptionrates caz of httpResponse :" + cpe);
+					s="e1";
+					cpe.printStackTrace();
+					Toast.makeText(getApplicationContext(), cpe.toString(),Toast.LENGTH_LONG).show();
+				} catch (IOException ioe) {
+					System.out.println("Secondption generates caz of httpResponse :" + ioe);
+					s=ioe.toString();
+					ioe.printStackTrace();
+					Toast.makeText(getApplicationContext(), ioe.toString(),Toast.LENGTH_LONG).show();
+				}
+				catch(Exception e)
+				{
+					Toast.makeText(getApplicationContext(), e.toString(),Toast.LENGTH_LONG).show();
+				}
+
+				return s;
+			}
+
+			// Argument comes for this method according to the return type of the doInBackground() and
+			//it is the third generic type of the AsyncTask
+			@Override
+			protected void onPostExecute(String result) {
+				super.onPostExecute(result);
+				//if(result.length()>0)
+				  s=result;
+				
+				//Toast.makeText(getApplicationContext(), "HTTP GET is working...", Toast.LENGTH_LONG).show();
+				MainActivity.this.donext();	
+			/*	if(result.equals("working")){
+					Toast.makeText(getApplicationContext(), "HTTP GET is working...", Toast.LENGTH_LONG).show();
+				}else{
+					Toast.makeText(getApplicationContext(), "Invalid...", Toast.LENGTH_LONG).show();
+				}	*/			
+			}			
+		}
+
+		// Initialize the AsyncTask class
+		try{
+		HttpGetAsyncTask httpGetAsyncTask = new HttpGetAsyncTask();
+		// Parameter we pass in the execute() method is relate to the first generic type of the AsyncTask
+		// We are passing the connectWithHttpGet() method arguments to that
+		httpGetAsyncTask.execute();
+		}
+		catch(Exception e)
+		{
+			txtLat = (TextView) findViewById(R.id.textview1);
+			txtLat.setText(e.toString());
+					
+		}
+		
+	}
+
+
+public void donext()
+{
+	//Toast.makeText(getApplicationContext(),s, Toast.LENGTH_LONG).show();
+	txtLat = (TextView) findViewById(R.id.textview1);
+	txtLat.setText(s);
+	ttobj.speak(s, TextToSpeech.QUEUE_FLUSH, null);
+	
+	
+}	
+	
+	
+	
+	@Override
+	public void onProviderDisabled(String arg0) {
+		// TODO Auto-generated method stub
+		Log.d("Latitude","disable");	
+	}
+
+
+	@Override
+	public void onProviderEnabled(String arg0) {
+		// TODO Auto-generated method stub
+		Log.d("Latitude","enable");	
+	}
+
+
+	@Override
+	public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
+		// TODO Auto-generated method stub
+		Log.d("Latitude","status");
+	}
+}
